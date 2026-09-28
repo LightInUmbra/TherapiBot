@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TherapiBot</title>
-<meta name="description" content="A friendly listener for hard days. Private: nothing you type leaves your device.">
+<meta name="description" content="A private place to sort through your thoughts on hard days, with links to real people who can help.">
 <style>
   :root {
     --bg: #f6f4ef; --panel: #ffffff; --text: #1f2328; --muted: #5b616b; --border: #d9d6cf;
@@ -51,12 +51,12 @@
 <body>
 <header>
   <h1>TherapiBot</h1>
-  <p>A friendly listener, not a therapist. Private: nothing you type leaves your device.</p>
+  <p>A simple program, not a person or a therapist. Private: nothing you type leaves your device.</p>
 </header>
 <div class="crisis banner" role="note">
-  In crisis? US: call or text <a href="tel:988">988</a> ·
+  Need to talk to someone now? US: call or text <a href="tel:988">988</a> ·
   Anywhere: <a href="https://findahelpline.com" target="_blank" rel="noopener">findahelpline.com</a> ·
-  In danger: call your local emergency number.
+  Emergency: call 911 or your local emergency number.
 </div>
 <noscript><p class="banner">TherapiBot needs JavaScript to chat. The crisis resources above work without it.</p></noscript>
 <div id="log" role="log" aria-live="polite"></div>
@@ -72,17 +72,20 @@
 const good = ["happy", "cheerful", "glad", "good", "great", "pleased", "thrilled", "blessed", "content", "joyful",
               "fine", "okay", "ok", "well"];
 const bad = ["depressed", "sad", "upset", "suicidal", "worthless", "self harm", "selfharm", "down", "unhappy", "sorrow",
-             "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible"];
+             "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible", "struggling"];
 const negations = ["not", "no", "never", "isn't", "don't", "aren't", "wasn't", "nothing"];
 // Phrases that mean the user may be in danger; checked on EVERY message
 const crisis = ["suicid", "kill myself", "end my life", "end it all", "want to die", "wanna die", "better off dead",
                 "self harm", "selfharm", "self-harm", "hurt myself", "cut myself", "no reason to live"];
 const yes = ["yes", "y", "ya", "yeah", "yea", "yep", "sure", "ok", "okay"];
+const no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im not"];
 
 // Phones type curly apostrophes; normalize so "don’t" matches "don't"
 const clean = text => text.toLowerCase().replace(/[’‘]/g, "'");
 const isCrisis = text => crisis.some(phrase => clean(text).includes(phrase));
 const isYes = text => yes.includes(clean(text).trim());
+// Only a clear "no" counts; "not sure", "maybe" or anything else is taken seriously
+const isNo = text => no.includes(clean(text).replace(/[^a-z ]/g, "").trim());
 function isGood(mood) {
   const m = clean(mood), words = m.match(/[a-z']+/g) || [];
   return words.some(w => good.includes(w)) && !words.some(w => negations.includes(w)) && !bad.some(b => m.includes(b));
@@ -102,17 +105,27 @@ function add(cls, parts) {
 const say = async (...parts) => { await new Promise(r => setTimeout(r, 350)); add("bot", parts); };
 function link(text, url) {
   const a = document.createElement("a");
-  a.href = url; a.textContent = text; a.target = "_blank"; a.rel = "noopener";
+  a.href = url; a.textContent = text;
+  if (url.startsWith("http")) { a.target = "_blank"; a.rel = "noopener"; }
   return a;
 }
 
-// Shown the moment anything the user types sounds like they may be in danger
-function crisisHelp() {
-  add("bot crisis", ["It sounds like you're carrying something really heavy right now.\n" +
-    "You don't have to go through this alone. Please reach out to a real person:\n" +
-    "• US: call or text ", link("988", "tel:988"), " (", link("988lifeline.org", "https://988lifeline.org/"), ")\n" +
-    "• Anywhere else: ", link("findahelpline.com", "https://findahelpline.com"), "\n" +
-    "• If you are in immediate danger, call your local emergency number."]);
+// Wording follows 988 Lifeline, #BeThe1To and #chatsafe guidance (see README for sources)
+const resources = () => [
+  "• Call or text ", link("988", "tel:988"), " (US), or ", link("chat online", "https://chat.988lifeline.org/"),
+  ". It's free, confidential and open 24/7. A trained counselor will listen. " +
+  "You don't need to be in crisis or know exactly what to say.\n" +
+  "• Outside the US: ", link("findahelpline.com", "https://findahelpline.com"),
+  " lists free helplines in your country.\n" +
+  "• If you are in immediate danger or have hurt yourself, call 911 or your local emergency number now."];
+const trustedPerson = "You could also reach out to someone you trust, like a friend, family member, teacher, " +
+  "school counselor or doctor. If you're not sure what to say, you could start with: " +
+  "“I've been having a really hard time. Can we talk?”";
+
+// Connects the user with real people the moment they may be in danger
+function crisisHelp(opening) {
+  add("bot crisis", [opening + "\nYou deserve support from a real person, and I'm only a program. Please reach out:\n",
+    ...resources(), "\n\n" + trustedPerson]);
 }
 
 // Waits for the user's next message; optional quick-reply buttons
@@ -133,86 +146,96 @@ function submit(text) {
   chips.replaceChildren();
   add("user", [text]);
   // Every message goes through here so a cry for help is never missed, no matter where it's typed
-  if (isCrisis(text)) crisisHelp();
+  if (isCrisis(text)) crisisHelp("It sounds like you might be going through something really painful.");
   resolve(text);
 }
 form.onsubmit = e => { e.preventDefault(); submit(input.value); input.value = ""; };
 
 async function run() {
   log.replaceChildren();
-  await say("Hello...\nOh! I'm sorry! I haven't asked for your name. So talk to me:\nWhat is your name?");
-  let name = await ask();
-  await say(`Oh, your name is ${name}?`);
-  if (isYes(await ask(["Yes", "No"]))) {
-    await say("Alright! Sweet!");
-  } else {
-    await say("Oh? So what is your name?");
-    name = await ask();
-    await say(`Alright then, ${name}.\nGlad to meet you. I will do everything I can to help.`);
-  }
-  await say("So, how is everything?\nGood or Bad?");
-  if (isGood(await ask(["Good", "Bad"]))) {
-    await say("That's good! I am assuming everything is going well for you then!\nKeep up the good work!");
+  await say("Hi, I'm TherapiBot.\nI'm a simple program, not a person or a therapist. I can't fix things, " +
+    "but I can give you a private place to sort through your thoughts, and point you toward real people who can help.");
+  await say("What should I call you? A nickname is fine.");
+  let name = await ask(["Skip"]);
+  if (name === "Skip") name = "";
+  await say((name ? `Thanks, ${name}.` : "Okay.") + " How are you feeling today?");
+  if (isGood(await ask(["Pretty good", "Not great", "Really struggling"]))) {
+    await say("I'm glad to hear that. If a harder day comes, I'm here, and so are the counselors at 988 and findahelpline.com.");
     return end();
   }
-  await say("Oh, I'm sorry to hear. Would you like to vent?\n" +
-    "Venting is useful when you're in a bad state of mind.\n" +
-    "It's better to let stress out in a positive way, like writing or singing. " +
-    "So how about it? Would you like to type about it?\nI'm all ears!");
-  if (isYes(await ask(["Yes", "No"]))) return vent();
-
-  await say("If no, then its okay. Any reason in particular you feel the way you feel?\n" +
-    "What's going on? I could be of some help, depending of what you need.\n" +
-    "Are you...(or feeling)\nSuicidal, depressing moments, no confidence?");
-  const reason = clean(await ask(["Suicidal", "Depressing moments", "No confidence"]));
-  if (isCrisis(reason)) {
-    await say("Whatever you're going through, things can change, and people want to help you through it.\n" +
-      "Reaching out is a strong thing to do.");
-  } else if (reason.includes("depress")) {
-    await say("We all have our ups and downs. Some of us may have it worse. Some of us may " +
-      "experience a close one's death, or maybe someone's house burned down. We all have horrid days, " +
-      "and some of us lives. Some people spend most of their teens being bullied only for being different. " +
-      "What makes all those people, including you, different are the fact you guys are fighters and come out " +
-      "doing better than ever. Don't give up! You should read these ",
-      link("empowering quotes", "https://www.google.com/search?tbm=isch&safe=active&q=quotes+on+never+giving+up"), ".");
-    await say("Hope this helped you feel a bit better!");
-  } else if (reason.includes("confide")) {
-    await say("We've all been to a point where we have lost ourselves.\n" +
-      "So, this ", link("motivational video from Will Smith", "https://www.youtube.com/watch?v=ft_DXwgUXB0"),
-      " should help. Watch it.");
+  // Asks directly about suicide: asking does not put the idea in someone's head, and it can bring relief
+  await say("I'm sorry things are hard right now.");
+  await say("I ask everyone this, so please don't be alarmed: are you having any thoughts of suicide or of hurting yourself?");
+  const answer = await ask(["Yes", "No", "Not sure"]);
+  if (isNo(answer)) {
+    await say("Okay. Thank you for answering. I know it's a personal question.");
   } else {
-    await say("Well, it's okay. I understand if you don't trust me. All I want you to know is that I am here to listen.");
+    if (!isCrisis(answer)) crisisHelp("Thank you for telling me. That takes courage, and I'm glad you did.");
+    await say("I'm here while you reach out.");
   }
-  await say('Type in "Thank You" to exit.');
-  while (!clean(await ask(["Thank You"])).includes("thank"));
-  await say("You're welcome. Take care of yourself!");
+  await menu();
+  await say(`Thank you for taking this time for yourself${name ? ", " + name : ""}. Hard feelings can change, ` +
+    "especially with support. You can come back anytime, and 988 is there 24/7.");
   end();
 }
 
-// Lets the user send as many messages as they want, then offers to save them
-async function vent() {
-  await say("I'm glad. You can start typing now.\nSend as many messages as you like, and tap “I'm done” when you're finished.");
+// Lets the user pick what would help, as many times as they like
+async function menu() {
+  for (;;) {
+    await say("What would help most right now?");
+    const choice = clean(await ask(["Write about it", "Calm my mind", "Find someone to talk to", "I'm done for now"]));
+    if (choice.includes("write")) await write();
+    else if (choice.includes("calm")) await ground();
+    else if (choice.includes("talk")) await say("Talking to someone can help, even if you're not in crisis.\n",
+      ...resources(), "\n\n" + trustedPerson);
+    else if (choice.includes("done")) return;
+    else await say("Sorry, I didn't catch that. You can tap one of the options below.");
+  }
+}
+
+// Expressive writing: putting feelings into words can ease stress
+async function write() {
+  await say("This is your space. Write whatever is on your mind. Spelling and grammar don't matter, " +
+    "and no one else will see it. It can help to write about what happened and how it made you feel.\n" +
+    "Send as many messages as you like, and tap “I'm done” when you're finished.");
   const lines = [];
   for (let text; (text = await ask(["I'm done"])) !== "I'm done";) lines.push(text);
-  if (!lines.length) {
-    await say("That's okay. Sometimes it's hard to find the words.");
-    return end();
-  }
-  await say("Would you like to save your typing?\nIt downloads as a text file to your device. Nothing is sent anywhere.");
+  if (!lines.length) return say("That's okay. Sometimes it's hard to find the words.");
+  await say("Thank you for putting that into words. That isn't always easy.");
+  await say("Would you like to save what you wrote? It downloads as a text file to your device. Nothing is sent anywhere.");
   if (isYes(await ask(["Yes", "No"]))) {
     download(lines.join("\n") + "\n");
-    await say("Thank you for dedicating time to yourself. You needed it.\nHope you get better soon!");
-  } else {
-    await say("Alright. I'll see you soon then!");
+    await say("Saved to your downloads.");
   }
-  end();
+}
+
+// 5-4-3-2-1 grounding: brings attention back to the present when thoughts are racing
+async function ground() {
+  const steps = [
+    "Let's slow things down together. Take a slow breath in through your nose, and let it out slowly. " +
+    "When you're ready, name 5 things you can see.",
+    "Good. Now 4 things you can feel, like your feet on the floor or your clothes.",
+    "3 things you can hear.",
+    "2 things you can smell. If nothing comes to mind, think of two smells you like.",
+    "And 1 thing you can taste, or take one more slow, deep breath."];
+  for (const step of steps) {
+    await say(step);
+    await ask(["Next"]);
+  }
+  await say("Well done. How are you feeling now?");
+  if (clean(await ask(["Better", "The same", "Worse"])).includes("better")) {
+    await say("I'm glad. You can use this exercise anytime, anywhere.");
+  } else {
+    await say("That's okay. It doesn't always help right away, and that's not your fault. " +
+      "When feelings are this heavy, talking to someone can help.");
+  }
 }
 
 function download(text) {
   const d = new Date(), p = n => String(n).padStart(2, "0");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-  a.download = `TherapiBot vent ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}.txt`;
+  a.download = `TherapiBot journal ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}.txt`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }

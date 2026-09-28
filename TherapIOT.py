@@ -8,25 +8,37 @@ from pathlib import Path
 good = ["happy", "cheerful", "glad", "good", "great", "pleased", "thrilled", "blessed", "content", "joyful",
         "fine", "okay", "ok", "well"]
 bad = ["depressed", "sad", "upset", "suicidal", "worthless", "self harm", "selfharm", "down", "unhappy", "sorrow",
-       "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible"]
+       "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible", "struggling"]
 negations = ["not", "no", "never", "isn't", "don't", "aren't", "wasn't", "nothing"]
 # Phrases that mean the user may be in danger; checked on EVERY answer
 crisis = ["suicid", "kill myself", "end my life", "end it all", "want to die", "wanna die", "better off dead",
           "self harm", "selfharm", "self-harm", "hurt myself", "cut myself", "no reason to live"]
 yes = ["yes", "y", "ya", "yeah", "yea", "yep", "sure", "ok", "okay"]
+no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im not"]
 
 # Vents are saved here, in the user's home folder, so they're easy to find again
 journal_dir = Path.home() / "TherapiBot Journal"
 
+# Wording follows 988 Lifeline, #BeThe1To and #chatsafe guidance (see README for sources)
+resources = ("  - Call or text 988 (US), or chat at chat.988lifeline.org\n"
+             "    It's free, confidential and open 24/7. A trained counselor will listen.\n"
+             "    You don't need to be in crisis or know exactly what to say.\n"
+             "  - Outside the US: findahelpline.com lists free helplines in your country.\n"
+             "  - If you are in immediate danger or have hurt yourself, call 911 or your\n"
+             "    local emergency number now.\n")
+trusted_person = ("You could also reach out to someone you trust, like a friend, family member,\n"
+                  "teacher, school counselor or doctor. If you're not sure what to say, you could\n"
+                  "start with: \"I've been having a really hard time. Can we talk?\"\n")
+
 
 # main function where it will carry the code within all the code
 def main():
-    print("(TherapiBot is a friendly listener, not a therapist. If you are in crisis,\n"
-          " call or text 988 in the US, or find a helpline anywhere at findahelpline.com.)\n")
+    print("(If you are in crisis, call or text 988 in the US or visit findahelpline.com.\n"
+          " In an emergency, call 911 or your local emergency number.)\n")
     try:
         welcome()
     except (KeyboardInterrupt, EOFError):
-        print("\nTake care of yourself. I'll be here whenever you need me.")
+        print("\nTake care of yourself. You can come back anytime.")
 
 
 def is_crisis(text):
@@ -42,132 +54,106 @@ def is_good(mood):
             and not any(word in mood.lower() for word in bad))
 
 
+def is_no(answer):
+    # Only a clear "no" counts; "not sure", "maybe" or anything else is taken seriously
+    return re.sub(r"[^a-z ]", "", answer.lower()).strip() in no
+
+
 # Every question goes through here so a cry for help is never missed, no matter where it's typed
 def ask(prompt=""):
     answer = input(prompt).strip()
     if is_crisis(answer):
-        crisisHelp()
+        crisisHelp("It sounds like you might be going through something really painful.")
     return answer
 
 
-# Shown the moment anything the user types sounds like they may be in danger
-def crisisHelp():
-    print("\nIt sounds like you're carrying something really heavy right now.\n"
-          "You don't have to go through this alone. Please reach out to a real person:\n"
-          "  US: call or text 988 (988lifeline.org)\n"
-          "  Anywhere else: findahelpline.com\n"
-          "  If you are in immediate danger, call your local emergency number.\n")
+# Connects the user with real people the moment they may be in danger
+def crisisHelp(opening):
+    print(f"\n{opening}\n"
+          "You deserve support from a real person, and I'm only a program. Please reach out:\n"
+          f"{resources}\n{trusted_person}")
 
 
 # Welcome function in charge of guiding the user to however they feel.
 def welcome():
-    name = ask("Hello...\nOh! I'm sorry! I haven't asked for your name. So talk to me:\nWhat is your name?\n")
-    # breaks down code in case if misspelled name or desires to use a different name
-    if ask("Oh, your name is " + name + "?\n").lower() in yes:
-        print("Alright! Sweet!")
-    else:
-        name = ask("Oh? So what is your name?\n") or name
-        print("Alright then, " + name + ".\nGlad to meet you. I will do everything I can to help.")
+    print("Hi, I'm TherapiBot.\n"
+          "I'm a simple program, not a person or a therapist. I can't fix things, but I can\n"
+          "give you a private place to sort through your thoughts, and point you toward\n"
+          "real people who can help.\n")
+    name = ask("What should I call you? (A nickname is fine, or just press Enter.)\n")
     # mood will determine feeling [state of mind] of user; will use arrays to find words similar to, if not the same
-    mood = ask("So, how is everything?\n"
-               "Good or Bad?\n")
+    mood = ask(("Thanks, " + name + "." if name else "Okay.") + " How are you feeling today?\n")
     if is_good(mood):
-        # takes to good mood function
         goodMood()
     else:
-        # takes to get the user help needed
-        badMood()
+        notGood()
+        goodbye(name)
 
 
 # very short function for defining the user in a good state of mind.
 def goodMood():
-    print("That's good! I am assuming everything is going well for you then!\n"
-          "Keep up the good work!\n")
-    input("Press Enter to Exit: ")
+    print("I'm glad to hear that. If a harder day comes, I'm here, and so are the\n"
+          "counselors at 988 and findahelpline.com.\n")
+    input("Press Enter to close.")
 
 
-# Function to give suicide prevention resources to user if feelings get to this point
-# Gives number and website information upon request
-def suicideHelper():
-    if ask("Would you like me to open 988lifeline.org now?\n").lower() in yes:
-        webbrowser.open_new_tab("https://988lifeline.org/")
-    print("Whatever you're going through, things can change, and people want to help you through it.\n"
-          "Reaching out is a strong thing to do.\n")
-
-
-# Bad mood function meant for the user to navigate when in need of support
-def badMood():
-    # Prompts the user if they would like to vent their stress.
-    print("Oh, I'm sorry to hear. Would you like to vent?\n"
-          "Venting is useful when you're in a bad state of mind.\n"
-          "It's better to let stress out in a positive way, like writing or\n"
-          "singing. So how about it? Would you like to type about it?\n"
-          "I'm all ears!\n"
-          "yes or no?")
-    if ask().lower() in yes:
-        vent()
-        return
-    # Alternatives to venting
-    # area for offering information
-    print("If no, then its okay. Any reason in particular you feel the way you feel?\n"
-          "What's going on? I could be of some help, depending of what you need.\n"
-          "Are you...(or feeling)\n"
-          "Suicidal, depressing moments, no confidence?\n")
-    reason = ask().lower()
-    if is_crisis(reason):
-        # ask() already showed the crisis resources; offer to open the site
-        suicideHelper()
-    elif "depress" in reason:
-        # Attempts to get the user to show at least a bit of a smile
-        print("We all have our ups and downs. Some of us may have it worse. Some of us may\n"
-              "experience a close one's death, or maybe someone's house burned down. We\n"
-              "all have horrid days, and some of us lives. Some people spend most of their\n"
-              "teens being bullied only for being different. What makes all those people,\n"
-              "including you, different are the fact you guys are fighters and come out\n"
-              "doing better than ever. Don't give up! You should read these empowering quotes\n"
-              "from the google search engine.")
-        input("Press Enter: ")
-        # Opens a new tab for positive quotes
-        webbrowser.open_new_tab("https://www.google.com/search?tbm=isch&safe=active&q=quotes+on+never+giving+up")
-        print("Hope this helped you feel a bit better!")
-    elif "confide" in reason:
-        # Serves to be a confidence booster
-        print("We've all been to a point where we have lost ourselves.\n"
-              "So, this motivational video from Will Smith should help.\n"
-              "Watch it.")
-        input("Press enter to open the video on YouTube.")
-        webbrowser.open_new_tab("https://www.youtube.com/watch?v=ft_DXwgUXB0")
+# Asks directly about suicide: asking does not put the idea in someone's head, and it can bring relief
+def notGood():
+    print("I'm sorry things are hard right now.")
+    answer = ask("I ask everyone this, so please don't be alarmed: are you having any thoughts\n"
+                 "of suicide or of hurting yourself? (yes / no / not sure)\n")
+    if is_no(answer):
+        print("Okay. Thank you for answering. I know it's a personal question.")
     else:
-        print("Well, it's okay. I understand if you don't trust me. All I want you to know\n"
-              "is that I am here to listen.\n")
-    # Asks the user to politely finish the program
-    while "thank" not in ask("Type in \"Thank You\" to exit.\n").lower():
-        pass
-    print("You're welcome. Take care of yourself!")
+        if not is_crisis(answer):  # ask() already showed the resources if it was
+            crisisHelp("Thank you for telling me. That takes courage, and I'm glad you did.")
+        if ask("Would you like me to open the 988 chat in your browser? (yes / no)\n").lower() in yes:
+            webbrowser.open_new_tab("https://chat.988lifeline.org/")
+        print("I'm here while you reach out.")
+    menu()
 
 
-# Lets the user type as much as they want, then offers to save it
-def vent():
-    print("I'm glad. You can start typing now.\n"
-          "[Press Enter on an empty line when you're done]:")
+# Lets the user pick what would help, as many times as they like
+def menu():
+    while True:
+        choice = ask("\nWhat would help most right now?\n"
+                     "  1) Write about what's on my mind\n"
+                     "  2) Calm my mind with a short exercise\n"
+                     "  3) Find someone to talk to\n"
+                     "  4) I'm done for now\n").lower()
+        if choice.startswith("1") or "write" in choice:
+            write()
+        elif choice.startswith("2") or "calm" in choice:
+            ground()
+        elif choice.startswith("3") or "talk" in choice:
+            talk()
+        elif choice.startswith("4") or "done" in choice:
+            return
+        else:
+            print("Sorry, I didn't catch that. You can type a number from 1 to 4.")
+
+
+# Expressive writing: putting feelings into words can ease stress
+def write():
+    print("\nThis is your space. Write whatever is on your mind. Spelling and grammar don't\n"
+          "matter, and no one else will see it. It can help to write about what happened\n"
+          "and how it made you feel.\n"
+          "[Press Enter on an empty line when you're done]")
     lines = []
     while line := ask():
         lines.append(line)
     if not lines:
         print("That's okay. Sometimes it's hard to find the words.")
-        input("Press Enter: ")
         return
+    print("Thank you for putting that into words. That isn't always easy.")
     # This is in case the user would like to save whatever they typed up
-    if ask("Would you like to save your typing?\nYes or no?\n").lower() in yes:
+    if ask("Would you like to save what you wrote? It stays on this computer. (yes / no)\n").lower() in yes:
         save("\n".join(lines) + "\n", ask("Title name? (optional)\n"))
-    else:
-        print("Alright. I'll see you soon then!")
-        input("Press Enter: ")
 
 
 def save(text, title):
     # Keeps only safe characters so any title works as a file name, and dates it so nothing is overwritten
-    title = "".join(c for c in title if c.isalnum() or c in " -_").strip() or "vent"
+    title = "".join(c for c in title if c.isalnum() or c in " -_").strip() or "journal"
     path = journal_dir / f"{datetime.now():%Y-%m-%d %H-%M-%S} {title}.txt"
     try:
         journal_dir.mkdir(exist_ok=True)
@@ -176,11 +162,37 @@ def save(text, title):
         # Never lose what the user wrote: show it back so they can copy it somewhere
         print(f"Sorry, I couldn't save your file ({error}). Here's what you wrote so you can copy it:\n\n{text}")
     else:
-        # Thanks the user for self awareness
-        print(f"Saved to {path}\n"
-              "Thank you for dedicating time to yourself. You needed it.\n"
-              "Hope you get better soon!")
-    input("Press Enter. ")
+        print(f"Saved to {path}")
+
+
+# 5-4-3-2-1 grounding: brings attention back to the present when thoughts are racing
+def ground():
+    steps = ["Let's slow things down together. Take a slow breath in through your nose,\n"
+             "and let it out slowly. When you're ready, name 5 things you can see.",
+             "Good. Now 4 things you can feel, like your feet on the floor or your clothes.",
+             "3 things you can hear.",
+             "2 things you can smell. If nothing comes to mind, think of two smells you like.",
+             "And 1 thing you can taste, or take one more slow, deep breath."]
+    print()
+    for step in steps:
+        ask(step + "\n")
+    if "better" in ask("Well done. How are you feeling now? (better / the same / worse)\n").lower():
+        print("I'm glad. You can use this exercise anytime, anywhere.")
+    else:
+        print("That's okay. It doesn't always help right away, and that's not your fault.\n"
+              "When feelings are this heavy, talking to someone can help.")
+
+
+def talk():
+    print(f"\nTalking to someone can help, even if you're not in crisis.\n{resources}\n{trusted_person}")
+    if ask("Would you like me to open the 988 chat in your browser? (yes / no)\n").lower() in yes:
+        webbrowser.open_new_tab("https://chat.988lifeline.org/")
+
+
+def goodbye(name):
+    print(f"\nThank you for taking this time for yourself{', ' + name if name else ''}. Hard feelings can\n"
+          "change, especially with support. You can come back anytime, and 988 is there 24/7.")
+    input("Press Enter to close.")
 
 
 # Runs the entire code

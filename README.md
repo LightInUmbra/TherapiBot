@@ -3,10 +3,16 @@ This is a small chat bot I made using python to work under the command line. It 
 
 The purpose of this "Chat Bot" is for the user to get help, as well as to express their emotions with the comfort of privacy; no one has to know what they express, and they choose whether they would like to save their "Venting Session" or not. If they [The User] chooses not to disclose anything to the bot, there are preset options. This was made with the intention of helping college and high school students that are undergoing problems in relation to suicide, depression, and no self-confidence. This was only an idea I had for my local hackathon, and I do plan to update this chat bot and make it more useable. I hope this chat bot helps anyone that needs it. It isn't my best work, but I'm proud of it.
 
-> **TherapiBot is a friendly listener, not a therapist.** If you are in crisis, call or text **988** in the US, or find a free helpline in your country at **[findahelpline.com](https://findahelpline.com)**. If you are in immediate danger, call your local emergency number.
+> **TherapiBot is a simple program, not a person or a therapist.** If you are in crisis, call or text **988** in the US, or find a free helpline in your country at **[findahelpline.com](https://findahelpline.com)**. If you are in immediate danger, call 911 or your local emergency number.
+
+# What it does
+TherapiBot checks in on how you're feeling. If you're having a hard time, it asks directly whether you're having thoughts of suicide or self-harm, and connects you with real people if you are. Then it offers three things:
+- **Write about it:** a private space to put your thoughts into words, which you can save if you want.
+- **Calm my mind:** a short 5-4-3-2-1 grounding exercise.
+- **Find someone to talk to:** what 988 and other helplines are like, plus a simple way to start the conversation with someone you trust.
 
 # Use it in your browser
-**[Open TherapiBot](https://lightinumbra.github.io/TherapiBot/)** on any phone or computer, with nothing to install. Everything stays on your device: nothing you type is sent or stored anywhere, and a saved vent downloads as a text file.
+**[Open TherapiBot](https://lightinumbra.github.io/TherapiBot/)** on any phone or computer, with nothing to install. Everything stays on your device: nothing you type is sent or stored anywhere, and saved writing downloads as a text file.
 
 # Use it in the terminal
 You need [Python 3.8 or newer](https://www.python.org/downloads/). Download `TherapIOT.py` and run:
@@ -15,11 +21,20 @@ You need [Python 3.8 or newer](https://www.python.org/downloads/). Download `The
 python TherapIOT.py
 ```
 
-Nothing is installed and nothing is sent anywhere. If you choose to save a vent, it goes into a `TherapiBot Journal` folder in your home folder, named with the date and time so older entries are never overwritten.
+Nothing is installed and nothing is sent anywhere. If you choose to save your writing, it goes into a `TherapiBot Journal` folder in your home folder, named with the date and time so older entries are never overwritten.
 
 Whatever you type, TherapiBot watches for signs you might be in danger and shows crisis resources right away.
 
 To check that crisis detection still works after changing the code, run `python test_TherapIOT.py`.
 
 # History
-Originally written in 2010 and updated over the years. Refreshed in 2026: the old 1-800 hotline was replaced with 988 and international resources, crisis detection now covers every answer instead of a single menu choice, venting takes any number of lines, and journal saving is safer.
+Originally written in 2010 and updated over the years. Refreshed in 2026: the old 1-800 hotline was replaced with 988 and international resources, crisis detection now covers every answer instead of a single menu choice, venting takes any number of lines, and journal saving is safer. The wording was then rewritten to follow current suicide prevention guidance, and a web version was added.
+
+# Why it says what it says
+The wording follows published guidance. If you change it, please keep to these principles:
+- **Ask about suicide directly.** Asking does not increase risk and may reduce suicidal thoughts. ([#BeThe1To](https://bethe1to.com/bethe1to-steps-evidence/))
+- **Take it seriously, and never minimize or compare.** Avoid "at least..." and "others have it worse". ([#chatsafe](https://www.orygen.org.au/chat-safe/responding-to-someone-who-may-be-suicidal))
+- **Focus on hope, actions and resources,** never on suicide itself. ([Action Alliance Framework for Successful Messaging](https://suicidepreventionmessaging.org/safety))
+- **Explain what reaching out is like,** so it feels less scary: 988 is free, confidential, and not only for emergencies. ([988 Lifeline](https://988lifeline.org/get-help/what-to-expect/))
+- **Offer coping strategies and people to contact,** the core of a safety plan. ([Stanley-Brown Safety Plan](https://sprc.org/resources/stanley-brown-safety-plan/), [grounding](https://www.nhsinform.scot/healthy-living/mental-wellbeing/breathing-and-relaxation-exercises/grounding-exercises/), [expressive writing](https://www.apa.org/news/podcasts/speaking-of-psychology/expressive-writing))
+- **Be honest that it's a program,** and point toward human care, not away from it. ([APA health advisory, 2025](https://www.apa.org/news/press/releases/2025/11/ai-wellness-apps-mental-health))
