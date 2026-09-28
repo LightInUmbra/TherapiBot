@@ -5,7 +5,10 @@ The purpose of this "Chat Bot" is for the user to get help, as well as to expres
 
 > **TherapiBot is a friendly listener, not a therapist.** If you are in crisis, call or text **988** in the US, or find a free helpline in your country at **[findahelpline.com](https://findahelpline.com)**. If you are in immediate danger, call your local emergency number.
 
-# How to use
+# Use it in your browser
+**[Open TherapiBot](https://lightinumbra.github.io/TherapiBot/)** on any phone or computer, with nothing to install. Everything stays on your device: nothing you type is sent or stored anywhere, and a saved vent downloads as a text file.
+
+# Use it in the terminal
 You need [Python 3.8 or newer](https://www.python.org/downloads/). Download `TherapIOT.py` and run:
 
 ```
