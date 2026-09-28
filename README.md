@@ -49,3 +49,6 @@ The wording follows published guidance. If you change it, please keep to these p
 - **Offer coping strategies and people to contact,** the core of a safety plan. ([Stanley-Brown Safety Plan](https://sprc.org/resources/stanley-brown-safety-plan/), [grounding](https://www.nhsinform.scot/healthy-living/mental-wellbeing/breathing-and-relaxation-exercises/grounding-exercises/), [expressive writing](https://www.apa.org/news/podcasts/speaking-of-psychology/expressive-writing))
 - **Use plain words that work for every age,** and recognize how different ages talk about suicide: kids and teens might say "kms" or "unalive", while older adults might say "I'm a burden" or "tired of living". When you add a phrase, add a test for it in `test_TherapIOT.py`.
 - **Be honest that it's a program,** and point toward human care, not away from it. ([APA health advisory, 2025](https://www.apa.org/news/press/releases/2025/11/ai-wellness-apps-mental-health))
+
+# Special Thanks
+I'd like to give a special thanks/shoutout to my best friend, Kyle. If you ever see this repo mate, thank you for helping me through my later years. You were my main inspiration to keep this project going for a bit longer.
