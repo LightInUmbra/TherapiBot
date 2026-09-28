@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TherapiBot</title>
-<meta name="description" content="A private place to sort through your thoughts on hard days, with links to real people who can help.">
+<meta name="description" content="A private place to sort through your thoughts on hard days, with links to real people who can help. In English and Spanish.">
 <style>
   :root {
     --bg: #f6f4ef; --panel: #ffffff; --text: #1f2328; --muted: #5b616b; --border: #d9d6cf;
@@ -28,6 +28,7 @@
   header { padding: 12px 16px 8px; }
   h1 { font-size: 1.15rem; margin: 0; }
   .title { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .title h1 { margin-right: auto; }
   #leave { background: var(--text); color: var(--bg); border-color: var(--text); }
   header p { margin: 0; color: var(--muted); font-size: .875rem; }
   .crisis { background: var(--crisis-bg); color: var(--crisis-text); }
@@ -56,45 +57,55 @@
 <header>
   <div class="title">
     <h1>TherapiBot</h1>
+    <button id="lang" type="button">Español</button>
     <button id="leave" type="button">Leave quickly</button>
   </div>
-  <p>A simple program, not a person or a therapist. Private: nothing you type leaves your device.</p>
+  <p id="tagline">A simple program, not a person or a therapist. Private: nothing you type leaves your device.</p>
 </header>
-<div class="crisis banner" role="note">
+<div class="crisis banner" role="note" id="banner">
   Need to talk to someone now? US: call or text <a href="tel:988">988</a> ·
   Anywhere: <a href="https://findahelpline.com" target="_blank" rel="noopener">findahelpline.com</a> ·
   Emergency: call 911 or your local emergency number.
 </div>
-<noscript><p class="banner">TherapiBot needs JavaScript to chat. The crisis resources above work without it.</p></noscript>
+<noscript><p class="banner">TherapiBot needs JavaScript to chat. The crisis resources above work without it.<br>
+  En español: llama al 988 y marca 2, o envía AYUDA por texto al 988.</p></noscript>
 <div id="log" role="log" aria-live="polite"></div>
 <div id="chips"></div>
 <form>
-  <label for="input" class="sr-only">Your message</label>
+  <label for="input" class="sr-only" id="label">Your message</label>
   <input id="input" autocomplete="off" placeholder="Type here…">
-  <button>Send</button>
+  <button id="send">Send</button>
 </form>
 
 <script>
-// Word lists kept in sync with TherapIOT.py (test_TherapIOT.py covers the same cases)
+// Word lists kept in sync with TherapIOT.py (test_TherapIOT.py covers the same cases).
+// English and Spanish are always checked together, since many people mix both.
+// Spanish entries are written without accents because clean() removes them.
 const good = ["happy", "cheerful", "glad", "good", "great", "pleased", "thrilled", "blessed", "content", "joyful",
-              "fine", "okay", "ok", "well"];
+              "fine", "okay", "ok", "well",
+              "bien", "feliz", "contento", "contenta", "alegre", "tranquilo", "tranquila", "genial", "excelente"];
 const bad = ["depressed", "sad", "upset", "suicidal", "worthless", "self harm", "selfharm", "down", "unhappy", "sorrow",
-             "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible", "struggling"];
-const negations = ["not", "no", "never", "isn't", "don't", "aren't", "wasn't", "nothing"];
+             "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible", "struggling",
+             "mal", "triste", "deprimid", "ansios", "angustiad", "preocupad", "fatal", "horrible"];
+const negations = ["not", "no", "never", "isn't", "don't", "aren't", "wasn't", "nothing", "nunca", "nada", "ni"];
 // Phrases that mean the user may be in danger; checked on EVERY message.
 // Covers how kids, teens and adults say it: slang ("kms", "unalive"), common misspellings,
 // and phrases older adults often use ("I'm a burden", "tired of living").
-const crisis = ["suicid", "suicd", "sucid","kill myself", "kms", "unalive", "end my life", "end it all",
+const crisis = ["suicid", "suicd", "sucid", "kill myself", "kms", "unalive", "end my life", "end it all",
                 "want to die", "wanna die", "better off dead", "better off without me", "self harm", "selfharm",
                 "self-harm", "hurt myself", "cut myself", "no reason to live", "no point in living", "no point living",
                 "don't want to be here", "dont want to be here", "don't want to live", "dont want to live",
                 "can't go on", "cant go on", "tired of living", "don't want to wake up", "dont want to wake up",
-                "i'm a burden", "im a burden", "burden to everyone", "burden on everyone", "want to disappear"];
-const yes = ["yes", "y", "ya", "yeah", "yea", "yep", "sure", "ok", "okay"];
-const no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im not"];
+                "i'm a burden", "im a burden", "burden to everyone", "burden on everyone", "want to disappear",
+                "matarme", "me quiero matar", "quitarme la vida", "acabar con mi vida", "acabar con todo",
+                "quiero morir", "no quiero vivir", "no quiero seguir viviendo", "no vale la pena vivir",
+                "mejor muerto", "mejor muerta", "estarian mejor sin mi", "hacerme dano", "lastimarme", "autolesion",
+                "ya no puedo mas", "soy una carga", "no quiero despertar", "quiero desaparecer"];
+const yes = ["yes", "y", "ya", "yeah", "yea", "yep", "sure", "ok", "okay", "si", "claro", "vale", "dale", "sale"];
+const no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im not", "nop", "nel", "para nada"];
 
-// Phones type curly apostrophes; normalize so "don’t" matches "don't"
-const clean = text => text.toLowerCase().replace(/[’‘]/g, "'");
+// Lowercase, straight apostrophes, no accents: "Daño" -> "dano", "don’t" -> "don't"
+const clean = text => text.toLowerCase().replace(/[’‘]/g, "'").normalize("NFD").replace(/[̀-ͯ]/g, "");
 const isCrisis = text => crisis.some(phrase => clean(text).includes(phrase));
 const isYes = text => yes.includes(clean(text).trim());
 // Only a clear "no" counts; "not sure", "maybe" or anything else is taken seriously
@@ -107,8 +118,161 @@ function isGood(mood) {
 const log = document.getElementById("log"), chips = document.getElementById("chips");
 const form = document.querySelector("form"), input = document.getElementById("input");
 let pending = null;
+
+function link(text, url) {
+  const a = document.createElement("a");
+  a.href = url; a.textContent = text;
+  if (url.startsWith("http")) { a.target = "_blank"; a.rel = "noopener"; }
+  return a;
+}
+
+// Every word the bot says, in both languages.
+// Wording follows 988 Lifeline, #BeThe1To and #chatsafe guidance (see README for sources),
+// kept to plain words so it works for anyone from age 10 to 60+
+const T = {
+  en: {
+    tagline: "A simple program, not a person or a therapist. Private: nothing you type leaves your device.",
+    banner: 'Need to talk to someone now? US: call or text <a href="tel:988">988</a> · ' +
+      'Anywhere: <a href="https://findahelpline.com" target="_blank" rel="noopener">findahelpline.com</a> · ' +
+      "Emergency: call 911 or your local emergency number.",
+    leave: "Leave quickly", other: "Español", label: "Your message", placeholder: "Type here…", send: "Send",
+    intro: "Hi, I'm TherapiBot.\nI'm a simple program, not a person or a therapist. I can't fix things, " +
+      "but I can give you a private place to sort through your thoughts, and point you toward real people who can help.",
+    askName: "What should I call you? A nickname is fine.", skip: "Skip",
+    greet: name => (name ? `Thanks, ${name}.` : "Okay.") + " How are you feeling today?",
+    moods: ["Pretty good", "Not great", "Really struggling"],
+    glad: "I'm glad to hear that. If a harder day comes, I'm here, and so are the counselors at 988 and findahelpline.com.",
+    sorry: "I'm sorry things are hard right now.",
+    askSuicide: "I ask everyone this, so please don't be alarmed: are you having any thoughts of suicide or of hurting yourself?",
+    yesNoSure: ["Yes", "No", "Not sure"],
+    thanksNo: "Okay. Thank you for answering. I know it's a personal question.",
+    thanksYes: "Thank you for telling me. That takes courage, and I'm glad you did.",
+    painful: "It sounds like you might be going through something really painful.",
+    deserve: "\nYou deserve support from a real person, and I'm only a program. Please reach out:\n",
+    here: "I'm here while you reach out.",
+    resources: () => [
+      "• Call or text ", link("988", "tel:988"), " (US), or ", link("chat online", "https://chat.988lifeline.org/"),
+      ". It's free, private and open 24/7, for any age. A trained counselor will listen. " +
+      "You don't need to be in crisis or know exactly what to say.\n" +
+      "• Veterans and service members: call 988 and press 1, or text ", link("838255", "sms:838255"), ".\n" +
+      "• Outside the US: ", link("findahelpline.com", "https://findahelpline.com"),
+      " lists free helplines in your country.\n" +
+      "• If you are in immediate danger or have hurt yourself, call 911 or your local emergency number now."],
+    trustedPerson: "You could also talk to someone you trust: a parent or other family member, a friend, " +
+      "a teacher or school counselor, a doctor, or a faith leader. If you're not sure what to say, you could start with: " +
+      "“I've been having a really hard time. Can we talk?”",
+    safetyPlan: () => ["It can also help to make a safety plan: a short list of warning signs, things that help " +
+      "you cope, and people to call. The free ",
+      link("Stanley-Brown Safety Plan", "https://sprc.org/resources/stanley-brown-safety-plan/"), " walks you through it."],
+    menuQ: "What would help most right now?",
+    menu: ["Write about it", "Calm my mind", "Find someone to talk to", "I'm done for now"],
+    talkIntro: "Talking to someone can help, even if you're not in crisis.\n",
+    didntCatch: "Sorry, I didn't catch that. You can tap one of the options below.",
+    writeIntro: "This is your space. Write whatever is on your mind. Spelling and grammar don't matter, " +
+      "and no one else will see it. It can help to write about what happened and how it made you feel.\n" +
+      "Send as many messages as you like, and tap “I'm done” when you're finished.",
+    done: "I'm done",
+    noWords: "That's okay. Sometimes it's hard to find the words.",
+    thanksWrite: "Thank you for putting that into words. That isn't always easy.",
+    askSave: "Would you like to save what you wrote? It downloads as a text file to your device. Nothing is sent anywhere.",
+    yesNo: ["Yes", "No"], saved: "Saved to your downloads.", file: "TherapiBot journal",
+    steps: ["Let's slow things down together. Take a slow breath in through your nose, and let it out slowly. " +
+      "When you're ready, name 5 things you can see.",
+      "Good. Now 4 things you can feel, like your feet on the floor or your clothes.",
+      "3 things you can hear.",
+      "2 things you can smell. If nothing comes to mind, think of two smells you like.",
+      "And 1 thing you can taste, or take one more slow, deep breath."],
+    next: "Next", howNow: "Well done. How are you feeling now?", feel: ["Better", "The same", "Worse"],
+    better: "I'm glad. You can use this exercise anytime, anywhere.",
+    notBetter: "That's okay. It doesn't always help right away, and that's not your fault. " +
+      "When feelings are this heavy, talking to someone can help.",
+    bye: name => `Thank you for taking this time for yourself${name ? ", " + name : ""}. Hard feelings can change, ` +
+      "especially with support. You can come back anytime, and 988 is there 24/7.",
+    startOver: "Start over",
+  },
+  es: {
+    tagline: "Un programa sencillo, no una persona ni un terapeuta. Privado: nada de lo que escribes sale de tu dispositivo.",
+    banner: '¿Necesitas hablar con alguien ahora? EE. UU.: llama al <a href="tel:988">988</a> y marca 2 para español, ' +
+      'o envía AYUDA por texto al <a href="sms:988">988</a> · ' +
+      'En cualquier país: <a href="https://findahelpline.com" target="_blank" rel="noopener">findahelpline.com</a> · ' +
+      "Emergencias: llama al 911 o al número de emergencias local.",
+    leave: "Salir rápido", other: "English", label: "Tu mensaje", placeholder: "Escribe aquí…", send: "Enviar",
+    intro: "Hola, soy TherapiBot.\nSoy un programa sencillo, no una persona ni un terapeuta. No puedo arreglar las cosas, " +
+      "pero puedo darte un espacio privado para ordenar tus pensamientos y ayudarte a encontrar personas reales que te pueden ayudar.",
+    askName: "¿Cómo te llamo? Puede ser un apodo.", skip: "Omitir",
+    greet: name => (name ? `Gracias, ${name}.` : "Está bien.") + " ¿Cómo te sientes hoy?",
+    moods: ["Bastante bien", "No muy bien", "La estoy pasando muy mal"],
+    glad: "Me alegra escuchar eso. Si llega un día más difícil, aquí estoy, y también los consejeros de la Línea 988 y findahelpline.com.",
+    sorry: "Siento mucho que las cosas estén difíciles ahora.",
+    askSuicide: "Esto se lo pregunto a todos, así que no te alarmes: ¿estás teniendo pensamientos de suicidio o de hacerte daño?",
+    yesNoSure: ["Sí", "No", "No sé"],
+    thanksNo: "Está bien. Gracias por responder. Sé que es una pregunta personal.",
+    thanksYes: "Gracias por contármelo. Eso requiere valor, y me alegra que lo hayas hecho.",
+    painful: "Parece que podrías estar pasando por algo muy doloroso.",
+    deserve: "\nMereces el apoyo de una persona real, y yo solo soy un programa. Por favor, busca ayuda:\n",
+    here: "Aquí estoy mientras buscas ayuda.",
+    resources: () => [
+      "• Llama al ", link("988", "tel:988"), " (EE. UU.) y marca 2 para español, envía la palabra AYUDA por texto al ",
+      link("988", "sms:988"), ", o ", link("chatea en español", "https://988lifeline.org/es/chat"),
+      ". Es gratis, privado y está disponible las 24 horas, para cualquier edad. Un consejero capacitado te escuchará. " +
+      "No necesitas estar en crisis ni saber exactamente qué decir.\n" +
+      "• Veteranos y miembros del servicio militar: llama al 988 y marca 1, o envía un texto al ",
+      link("838255", "sms:838255"), ".\n" +
+      "• Fuera de EE. UU.: ", link("findahelpline.com", "https://findahelpline.com"),
+      " tiene líneas de ayuda gratuitas en tu país.\n" +
+      "• Si estás en peligro inmediato o te has hecho daño, llama ahora al 911 o al número de emergencias local."],
+    trustedPerson: "También puedes hablar con alguien de confianza: un familiar, un amigo o amiga, un maestro o consejero " +
+      "escolar, un médico o un líder religioso. Si no sabes qué decir, puedes empezar con: " +
+      "“La he estado pasando muy mal. ¿Podemos hablar?”",
+    safetyPlan: () => ["También puede ayudar hacer un plan de seguridad: una lista corta de señales de alerta, cosas que " +
+      "te ayudan a sobrellevar el momento y personas a quienes llamar. El ",
+      link("Plan de Seguridad Stanley-Brown", "https://sprc.org/resources/stanley-brown-safety-plan/"),
+      " (en inglés) es gratuito y te guía paso a paso."],
+    menuQ: "¿Qué te ayudaría más en este momento?",
+    menu: ["Escribir sobre esto", "Calmar mi mente", "Hablar con alguien", "Terminé por ahora"],
+    talkIntro: "Hablar con alguien puede ayudar, aunque no estés en crisis.\n",
+    didntCatch: "Perdón, no entendí. Puedes tocar una de las opciones de abajo.",
+    writeIntro: "Este es tu espacio. Escribe lo que tengas en mente. La ortografía y la gramática no importan, " +
+      "y nadie más lo va a ver. Puede ayudar escribir sobre lo que pasó y cómo te hizo sentir.\n" +
+      "Envía todos los mensajes que quieras y toca “Ya terminé” cuando acabes.",
+    done: "Ya terminé",
+    noWords: "Está bien. A veces es difícil encontrar las palabras.",
+    thanksWrite: "Gracias por ponerlo en palabras. No siempre es fácil.",
+    askSave: "¿Quieres guardar lo que escribiste? Se descarga como archivo de texto en tu dispositivo. No se envía a ningún lado.",
+    yesNo: ["Sí", "No"], saved: "Guardado en tus descargas.", file: "TherapiBot diario",
+    steps: ["Vamos a ir más despacio juntos. Respira lento por la nariz y suelta el aire despacio. " +
+      "Cuando quieras, nombra 5 cosas que puedas ver.",
+      "Bien. Ahora 4 cosas que puedas sentir, como tus pies en el piso o tu ropa.",
+      "3 cosas que puedas oír.",
+      "2 cosas que puedas oler. Si no se te ocurre nada, piensa en dos olores que te gusten.",
+      "Y 1 cosa que puedas saborear, o respira profundo y despacio una vez más."],
+    next: "Siguiente", howNow: "Bien hecho. ¿Cómo te sientes ahora?", feel: ["Mejor", "Igual", "Peor"],
+    better: "Me alegra. Puedes usar este ejercicio cuando quieras, donde quieras.",
+    notBetter: "Está bien. No siempre ayuda de inmediato, y no es tu culpa. " +
+      "Cuando los sentimientos pesan tanto, hablar con alguien puede ayudar.",
+    bye: name => `Gracias por tomarte este tiempo para ti${name ? ", " + name : ""}. Los sentimientos difíciles pueden cambiar, ` +
+      "sobre todo con apoyo. Puedes volver cuando quieras, y la Línea 988 está disponible las 24 horas.",
+    startOver: "Empezar de nuevo",
+  },
+};
+
+// Spanish if the link says ?lang=es or the device is set to Spanish; the header button switches
+const param = new URLSearchParams(location.search).get("lang");
+const lang = param === "es" || param === "en" ? param : (navigator.language || "").toLowerCase().startsWith("es") ? "es" : "en";
+const t = T[lang];
+document.documentElement.lang = lang;
+document.getElementById("tagline").textContent = t.tagline;
+document.getElementById("banner").innerHTML = t.banner;  // our own fixed text, never user input
+document.getElementById("label").textContent = t.label;
+document.getElementById("send").textContent = t.send;
+input.placeholder = t.placeholder;
+const langButton = document.getElementById("lang"), leaveButton = document.getElementById("leave");
+langButton.textContent = t.other;
+langButton.lang = lang === "es" ? "en" : "es";
+langButton.onclick = () => { location.search = "?lang=" + langButton.lang; };
+leaveButton.textContent = t.leave;
 // Jumps to a neutral page and replaces this one in history, for anyone worried someone will see their screen
-document.getElementById("leave").onclick = () => location.replace("https://www.google.com/search?q=weather");
+leaveButton.onclick = () => location.replace("https://www.google.com/search?q=weather");
 
 function add(cls, parts) {
   const div = document.createElement("div");
@@ -118,34 +282,10 @@ function add(cls, parts) {
   log.scrollTop = log.scrollHeight;
 }
 const say = async (...parts) => { await new Promise(r => setTimeout(r, 350)); add("bot", parts); };
-function link(text, url) {
-  const a = document.createElement("a");
-  a.href = url; a.textContent = text;
-  if (url.startsWith("http")) { a.target = "_blank"; a.rel = "noopener"; }
-  return a;
-}
-
-// Wording follows 988 Lifeline, #BeThe1To and #chatsafe guidance (see README for sources),
-// kept to plain words so it works for anyone from age 10 to 60+
-const resources = () => [
-  "• Call or text ", link("988", "tel:988"), " (US), or ", link("chat online", "https://chat.988lifeline.org/"),
-  ". It's free, private and open 24/7, for any age. A trained counselor will listen. " +
-  "You don't need to be in crisis or know exactly what to say.\n" +
-  "• Veterans and service members: call 988 and press 1, or text ", link("838255", "sms:838255"), ".\n" +
-  "• Outside the US: ", link("findahelpline.com", "https://findahelpline.com"),
-  " lists free helplines in your country.\n" +
-  "• If you are in immediate danger or have hurt yourself, call 911 or your local emergency number now."];
-const trustedPerson = "You could also talk to someone you trust: a parent or other family member, a friend, " +
-  "a teacher or school counselor, a doctor, or a faith leader. If you're not sure what to say, you could start with: " +
-  "“I've been having a really hard time. Can we talk?”";
-const safetyPlan = () => ["It can also help to make a safety plan: a short list of warning signs, things that help " +
-  "you cope, and people to call. The free ",
-  link("Stanley-Brown Safety Plan", "https://sprc.org/resources/stanley-brown-safety-plan/"), " walks you through it."];
 
 // Connects the user with real people the moment they may be in danger
 function crisisHelp(opening) {
-  add("bot crisis", [opening + "\nYou deserve support from a real person, and I'm only a program. Please reach out:\n",
-    ...resources(), "\n\n" + trustedPerson]);
+  add("bot crisis", [opening + t.deserve, ...t.resources(), "\n\n" + t.trustedPerson]);
 }
 
 // Waits for the user's next message; optional quick-reply buttons
@@ -166,102 +306,85 @@ function submit(text) {
   chips.replaceChildren();
   add("user", [text]);
   // Every message goes through here so a cry for help is never missed, no matter where it's typed
-  if (isCrisis(text)) crisisHelp("It sounds like you might be going through something really painful.");
+  if (isCrisis(text)) crisisHelp(t.painful);
   resolve(text);
 }
 form.onsubmit = e => { e.preventDefault(); submit(input.value); input.value = ""; };
 
 async function run() {
   log.replaceChildren();
-  await say("Hi, I'm TherapiBot.\nI'm a simple program, not a person or a therapist. I can't fix things, " +
-    "but I can give you a private place to sort through your thoughts, and point you toward real people who can help.");
-  await say("What should I call you? A nickname is fine.");
-  let name = await ask(["Skip"]);
-  if (name === "Skip") name = "";
-  await say((name ? `Thanks, ${name}.` : "Okay.") + " How are you feeling today?");
-  if (isGood(await ask(["Pretty good", "Not great", "Really struggling"]))) {
-    await say("I'm glad to hear that. If a harder day comes, I'm here, and so are the counselors at 988 and findahelpline.com.");
+  await say(t.intro);
+  await say(t.askName);
+  let name = await ask([t.skip]);
+  if (name === t.skip) name = "";
+  await say(t.greet(name));
+  if (isGood(await ask(t.moods))) {
+    await say(t.glad);
     return end();
   }
   // Asks directly about suicide: asking does not put the idea in someone's head, and it can bring relief
-  await say("I'm sorry things are hard right now.");
-  await say("I ask everyone this, so please don't be alarmed: are you having any thoughts of suicide or of hurting yourself?");
-  const answer = await ask(["Yes", "No", "Not sure"]);
+  await say(t.sorry);
+  await say(t.askSuicide);
+  const answer = await ask(t.yesNoSure);
   if (isNo(answer)) {
-    await say("Okay. Thank you for answering. I know it's a personal question.");
+    await say(t.thanksNo);
   } else {
-    if (!isCrisis(answer)) crisisHelp("Thank you for telling me. That takes courage, and I'm glad you did.");
-    await say("I'm here while you reach out.");
+    if (!isCrisis(answer)) crisisHelp(t.thanksYes);
+    await say(t.here);
   }
   await menu();
-  await say(`Thank you for taking this time for yourself${name ? ", " + name : ""}. Hard feelings can change, ` +
-    "especially with support. You can come back anytime, and 988 is there 24/7.");
+  await say(t.bye(name));
   end();
 }
 
 // Lets the user pick what would help, as many times as they like
 async function menu() {
   for (;;) {
-    await say("What would help most right now?");
-    const choice = clean(await ask(["Write about it", "Calm my mind", "Find someone to talk to", "I'm done for now"]));
-    if (choice.includes("write")) await write();
-    else if (choice.includes("calm")) await ground();
-    else if (choice.includes("talk")) await say("Talking to someone can help, even if you're not in crisis.\n",
-      ...resources(), "\n\n" + trustedPerson + "\n\n", ...safetyPlan());
-    else if (choice.includes("done")) return;
-    else await say("Sorry, I didn't catch that. You can tap one of the options below.");
+    await say(t.menuQ);
+    const choice = clean(await ask(t.menu));
+    if (/write|escrib/.test(choice)) await write();
+    else if (/calm/.test(choice)) await ground();
+    else if (/talk|habl/.test(choice)) await say(t.talkIntro, ...t.resources(), "\n\n" + t.trustedPerson + "\n\n", ...t.safetyPlan());
+    else if (/done|termin/.test(choice)) return;
+    else await say(t.didntCatch);
   }
 }
 
 // Expressive writing: putting feelings into words can ease stress
 async function write() {
-  await say("This is your space. Write whatever is on your mind. Spelling and grammar don't matter, " +
-    "and no one else will see it. It can help to write about what happened and how it made you feel.\n" +
-    "Send as many messages as you like, and tap “I'm done” when you're finished.");
+  await say(t.writeIntro);
   const lines = [];
-  for (let text; (text = await ask(["I'm done"])) !== "I'm done";) lines.push(text);
-  if (!lines.length) return say("That's okay. Sometimes it's hard to find the words.");
-  await say("Thank you for putting that into words. That isn't always easy.");
-  await say("Would you like to save what you wrote? It downloads as a text file to your device. Nothing is sent anywhere.");
-  if (isYes(await ask(["Yes", "No"]))) {
+  for (let text; (text = await ask([t.done])) !== t.done;) lines.push(text);
+  if (!lines.length) return say(t.noWords);
+  await say(t.thanksWrite);
+  await say(t.askSave);
+  if (isYes(await ask(t.yesNo))) {
     download(lines.join("\n") + "\n");
-    await say("Saved to your downloads.");
+    await say(t.saved);
   }
 }
 
 // 5-4-3-2-1 grounding: brings attention back to the present when thoughts are racing
 async function ground() {
-  const steps = [
-    "Let's slow things down together. Take a slow breath in through your nose, and let it out slowly. " +
-    "When you're ready, name 5 things you can see.",
-    "Good. Now 4 things you can feel, like your feet on the floor or your clothes.",
-    "3 things you can hear.",
-    "2 things you can smell. If nothing comes to mind, think of two smells you like.",
-    "And 1 thing you can taste, or take one more slow, deep breath."];
-  for (const step of steps) {
+  for (const step of t.steps) {
     await say(step);
-    await ask(["Next"]);
+    await ask([t.next]);
   }
-  await say("Well done. How are you feeling now?");
-  if (clean(await ask(["Better", "The same", "Worse"])).includes("better")) {
-    await say("I'm glad. You can use this exercise anytime, anywhere.");
-  } else {
-    await say("That's okay. It doesn't always help right away, and that's not your fault. " +
-      "When feelings are this heavy, talking to someone can help.");
-  }
+  await say(t.howNow);
+  await say(/better|mejor/.test(clean(await ask(t.feel))) ? t.better : t.notBetter);
 }
 
 function download(text) {
   const d = new Date(), p = n => String(n).padStart(2, "0");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-  a.download = `TherapiBot journal ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}.txt`;
+  a.download = `${t.file} ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}.txt`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 async function end() {
-  await ask(["Start over"]);
+  await ask([t.startOver]);
   run();
 }
 

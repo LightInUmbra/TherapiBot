@@ -1,26 +1,35 @@
 # Declare libraries/modules if any
 import re
+import unicodedata
 import webbrowser
 from datetime import datetime
 from pathlib import Path
 
-# Setting up arrays to scan words
+# Setting up arrays to scan words, kept in sync with index.html.
+# English and Spanish are always checked together, since many people mix both.
+# Spanish entries are written without accents because clean() removes them.
 good = ["happy", "cheerful", "glad", "good", "great", "pleased", "thrilled", "blessed", "content", "joyful",
-        "fine", "okay", "ok", "well"]
+        "fine", "okay", "ok", "well",
+        "bien", "feliz", "contento", "contenta", "alegre", "tranquilo", "tranquila", "genial", "excelente"]
 bad = ["depressed", "sad", "upset", "suicidal", "worthless", "self harm", "selfharm", "down", "unhappy", "sorrow",
-       "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible", "struggling"]
-negations = ["not", "no", "never", "isn't", "don't", "aren't", "wasn't", "nothing"]
+       "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible", "struggling",
+       "mal", "triste", "deprimid", "ansios", "angustiad", "preocupad", "fatal", "horrible"]
+negations = ["not", "no", "never", "isn't", "don't", "aren't", "wasn't", "nothing", "nunca", "nada", "ni"]
 # Phrases that mean the user may be in danger; checked on EVERY answer.
 # Covers how kids, teens and adults say it: slang ("kms", "unalive"), common misspellings,
 # and phrases older adults often use ("I'm a burden", "tired of living").
-crisis = ["suicid", "suicd", "sucid","kill myself", "kms", "unalive", "end my life", "end it all",
+crisis = ["suicid", "suicd", "sucid", "kill myself", "kms", "unalive", "end my life", "end it all",
           "want to die", "wanna die", "better off dead", "better off without me", "self harm", "selfharm",
           "self-harm", "hurt myself", "cut myself", "no reason to live", "no point in living", "no point living",
           "don't want to be here", "dont want to be here", "don't want to live", "dont want to live",
           "can't go on", "cant go on", "tired of living", "don't want to wake up", "dont want to wake up",
-          "i'm a burden", "im a burden", "burden to everyone", "burden on everyone", "want to disappear"]
-yes = ["yes", "y", "ya", "yeah", "yea", "yep", "sure", "ok", "okay"]
-no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im not"]
+          "i'm a burden", "im a burden", "burden to everyone", "burden on everyone", "want to disappear",
+          "matarme", "me quiero matar", "quitarme la vida", "acabar con mi vida", "acabar con todo",
+          "quiero morir", "no quiero vivir", "no quiero seguir viviendo", "no vale la pena vivir",
+          "mejor muerto", "mejor muerta", "estarian mejor sin mi", "hacerme dano", "lastimarme", "autolesion",
+          "ya no puedo mas", "soy una carga", "no quiero despertar", "quiero desaparecer"]
+yes = ["yes", "y", "ya", "yeah", "yea", "yep", "sure", "ok", "okay", "si", "claro", "vale", "dale", "sale"]
+no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im not", "nop", "nel", "para nada"]
 
 # Vents are saved here, in the user's home folder, so they're easy to find again
 journal_dir = Path.home() / "TherapiBot Journal"
@@ -53,22 +62,29 @@ def main():
         print("\nTake care of yourself. You can come back anytime.")
 
 
+def clean(text):
+    # Lowercase, straight apostrophes, no accents: "Daño" -> "dano", "don’t" -> "don't"
+    text = text.lower().replace("’", "'").replace("‘", "'")
+    return unicodedata.normalize("NFD", text).encode("ascii", "ignore").decode()
+
+
 def is_crisis(text):
-    text = text.lower().replace("’", "'")  # curly apostrophes from copy/paste
+    text = clean(text)
     return any(phrase in text for phrase in crisis)
 
 
 def is_good(mood):
     # "good" only counts if nothing bad or negated is mixed in ("not good", "good but anxious")
-    words = re.findall(r"[a-z']+", mood.lower())
+    mood = clean(mood)
+    words = re.findall(r"[a-z']+", mood)
     return (any(word in good for word in words)
             and not any(word in negations for word in words)
-            and not any(word in mood.lower() for word in bad))
+            and not any(word in mood for word in bad))
 
 
 def is_no(answer):
     # Only a clear "no" counts; "not sure", "maybe" or anything else is taken seriously
-    return re.sub(r"[^a-z ]", "", answer.lower()).strip() in no
+    return re.sub(r"[^a-z ]", "", clean(answer)).strip() in no
 
 
 # Every question goes through here so a cry for help is never missed, no matter where it's typed

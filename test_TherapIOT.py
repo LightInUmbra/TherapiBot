@@ -25,4 +25,20 @@ for answer in ["no", "No.", "nope", "No, I'm not", "not really"]:
 for answer in ["yes", "not sure", "maybe", "sometimes", "idk", "no... well, sometimes"]:
     assert not is_no(answer), answer
 
+# Spanish, with or without accents
+for text in ["Me quiero morir", "quiero matarme", "No quiero vivir más", "estoy pensando en el suicidio",
+             "quiero hacerme daño", "quiero hacerme dano", "Soy una carga para mi familia", "ya no puedo más",
+             "estarían mejor sin mí", "no quiero despertar mañana", "a veces quiero desaparecer"]:
+    assert is_crisis(text), text
+for text in ["estoy cansado", "la escuela está difícil", "me muero de risa"]:
+    assert not is_crisis(text), text
+for mood in ["Bastante bien", "feliz", "Estoy tranquila"]:
+    assert is_good(mood), mood
+for mood in ["No muy bien", "La estoy pasando muy mal", "triste", "estoy deprimida"]:
+    assert not is_good(mood), mood
+for answer in ["No", "para nada"]:
+    assert is_no(answer), answer
+for answer in ["Sí", "No sé", "tal vez"]:
+    assert not is_no(answer), answer
+
 print("All checks passed.")

@@ -17,6 +17,8 @@ TherapiBot is for anyone having a hard time, from kids around age 10 to adults 6
 - **Calm my mind:** a short 5-4-3-2-1 grounding exercise.
 - **Find someone to talk to:** what 988 and other helplines are like (including the Veterans Crisis Line), a simple way to start the conversation with someone you trust, and a link to a free safety plan.
 
+The web version is in **English and Spanish**. It opens in Spanish on devices set to Spanish, or use **[TherapiBot en español](https://lightinumbra.github.io/TherapiBot/?lang=es)**. Crisis detection understands both languages in every conversation, since many people mix them.
+
 On the web version, the **Leave quickly** button jumps to a neutral page, for anyone worried that someone will see their screen.
 
 # Use it in your browser
