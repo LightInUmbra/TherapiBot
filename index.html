@@ -27,6 +27,8 @@
   }
   header { padding: 12px 16px 8px; }
   h1 { font-size: 1.15rem; margin: 0; }
+  .title { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  #leave { background: var(--text); color: var(--bg); border-color: var(--text); }
   header p { margin: 0; color: var(--muted); font-size: .875rem; }
   .crisis { background: var(--crisis-bg); color: var(--crisis-text); }
   .crisis a { color: inherit; font-weight: 600; }
@@ -38,7 +40,9 @@
   .bot a { color: var(--accent); }
   .user { background: var(--user); color: var(--user-text); align-self: flex-end; border-bottom-right-radius: 4px; }
   #chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px; }
-  button { font: inherit; cursor: pointer; border-radius: 999px; padding: 6px 14px;
+  /* 44px tap targets: easier for small fingers and for shaky or older hands */
+  button, input { min-height: 44px; }
+  button { font: inherit; cursor: pointer; border-radius: 999px; padding: 8px 16px;
            border: 1px solid var(--accent); background: transparent; color: var(--accent); }
   form { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--panel); }
   form button { background: var(--accent); color: var(--on-accent); border-radius: 10px; }
@@ -50,7 +54,10 @@
 </head>
 <body>
 <header>
-  <h1>TherapiBot</h1>
+  <div class="title">
+    <h1>TherapiBot</h1>
+    <button id="leave" type="button">Leave quickly</button>
+  </div>
   <p>A simple program, not a person or a therapist. Private: nothing you type leaves your device.</p>
 </header>
 <div class="crisis banner" role="note">
@@ -74,9 +81,15 @@ const good = ["happy", "cheerful", "glad", "good", "great", "pleased", "thrilled
 const bad = ["depressed", "sad", "upset", "suicidal", "worthless", "self harm", "selfharm", "down", "unhappy", "sorrow",
              "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible", "struggling"];
 const negations = ["not", "no", "never", "isn't", "don't", "aren't", "wasn't", "nothing"];
-// Phrases that mean the user may be in danger; checked on EVERY message
-const crisis = ["suicid", "kill myself", "end my life", "end it all", "want to die", "wanna die", "better off dead",
-                "self harm", "selfharm", "self-harm", "hurt myself", "cut myself", "no reason to live"];
+// Phrases that mean the user may be in danger; checked on EVERY message.
+// Covers how kids, teens and adults say it: slang ("kms", "unalive"), common misspellings,
+// and phrases older adults often use ("I'm a burden", "tired of living").
+const crisis = ["suicid", "suicd", "sucid","kill myself", "kms", "unalive", "end my life", "end it all",
+                "want to die", "wanna die", "better off dead", "better off without me", "self harm", "selfharm",
+                "self-harm", "hurt myself", "cut myself", "no reason to live", "no point in living", "no point living",
+                "don't want to be here", "dont want to be here", "don't want to live", "dont want to live",
+                "can't go on", "cant go on", "tired of living", "don't want to wake up", "dont want to wake up",
+                "i'm a burden", "im a burden", "burden to everyone", "burden on everyone", "want to disappear"];
 const yes = ["yes", "y", "ya", "yeah", "yea", "yep", "sure", "ok", "okay"];
 const no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im not"];
 
@@ -94,6 +107,8 @@ function isGood(mood) {
 const log = document.getElementById("log"), chips = document.getElementById("chips");
 const form = document.querySelector("form"), input = document.getElementById("input");
 let pending = null;
+// Jumps to a neutral page and replaces this one in history, for anyone worried someone will see their screen
+document.getElementById("leave").onclick = () => location.replace("https://www.google.com/search?q=weather");
 
 function add(cls, parts) {
   const div = document.createElement("div");
@@ -110,17 +125,22 @@ function link(text, url) {
   return a;
 }
 
-// Wording follows 988 Lifeline, #BeThe1To and #chatsafe guidance (see README for sources)
+// Wording follows 988 Lifeline, #BeThe1To and #chatsafe guidance (see README for sources),
+// kept to plain words so it works for anyone from age 10 to 60+
 const resources = () => [
   "• Call or text ", link("988", "tel:988"), " (US), or ", link("chat online", "https://chat.988lifeline.org/"),
-  ". It's free, confidential and open 24/7. A trained counselor will listen. " +
+  ". It's free, private and open 24/7, for any age. A trained counselor will listen. " +
   "You don't need to be in crisis or know exactly what to say.\n" +
+  "• Veterans and service members: call 988 and press 1, or text ", link("838255", "sms:838255"), ".\n" +
   "• Outside the US: ", link("findahelpline.com", "https://findahelpline.com"),
   " lists free helplines in your country.\n" +
   "• If you are in immediate danger or have hurt yourself, call 911 or your local emergency number now."];
-const trustedPerson = "You could also reach out to someone you trust, like a friend, family member, teacher, " +
-  "school counselor or doctor. If you're not sure what to say, you could start with: " +
+const trustedPerson = "You could also talk to someone you trust: a parent or other family member, a friend, " +
+  "a teacher or school counselor, a doctor, or a faith leader. If you're not sure what to say, you could start with: " +
   "“I've been having a really hard time. Can we talk?”";
+const safetyPlan = () => ["It can also help to make a safety plan: a short list of warning signs, things that help " +
+  "you cope, and people to call. The free ",
+  link("Stanley-Brown Safety Plan", "https://sprc.org/resources/stanley-brown-safety-plan/"), " walks you through it."];
 
 // Connects the user with real people the moment they may be in danger
 function crisisHelp(opening) {
@@ -187,7 +207,7 @@ async function menu() {
     if (choice.includes("write")) await write();
     else if (choice.includes("calm")) await ground();
     else if (choice.includes("talk")) await say("Talking to someone can help, even if you're not in crisis.\n",
-      ...resources(), "\n\n" + trustedPerson);
+      ...resources(), "\n\n" + trustedPerson + "\n\n", ...safetyPlan());
     else if (choice.includes("done")) return;
     else await say("Sorry, I didn't catch that. You can tap one of the options below.");
   }

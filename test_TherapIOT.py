@@ -3,7 +3,12 @@ from TherapIOT import is_crisis, is_good, is_no
 
 # Crisis phrases must be caught anywhere in a sentence, any capitalization
 for text in ["I feel suicidal", "i want to die", "Sometimes I think about SELF HARM", "I just wanna die lol",
-             "everyone would be better off dead without me", "I've been thinking about suicide"]:
+             "everyone would be better off dead without me", "I've been thinking about suicide",
+             # kids and teens
+             "i want to kms", "thinking about how to unalive myself", "i feel sucidal", "I just want to disappear",
+             # adults and older adults
+             "I'm a burden to my family", "I'm tired of living", "I don't want to wake up tomorrow",
+             "they'd be better off without me", "I can’t go on like this", "I don't want to be here anymore"]:
     assert is_crisis(text), text
 for text in ["I'm tired", "school is hard", "I died laughing"]:
     assert not is_crisis(text), text

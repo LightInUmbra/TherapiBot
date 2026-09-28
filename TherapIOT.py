@@ -10,9 +10,15 @@ good = ["happy", "cheerful", "glad", "good", "great", "pleased", "thrilled", "bl
 bad = ["depressed", "sad", "upset", "suicidal", "worthless", "self harm", "selfharm", "down", "unhappy", "sorrow",
        "sorrowful", "troubled", "anxious", "anxiety attack", "anxiety", "bad", "awful", "terrible", "struggling"]
 negations = ["not", "no", "never", "isn't", "don't", "aren't", "wasn't", "nothing"]
-# Phrases that mean the user may be in danger; checked on EVERY answer
-crisis = ["suicid", "kill myself", "end my life", "end it all", "want to die", "wanna die", "better off dead",
-          "self harm", "selfharm", "self-harm", "hurt myself", "cut myself", "no reason to live"]
+# Phrases that mean the user may be in danger; checked on EVERY answer.
+# Covers how kids, teens and adults say it: slang ("kms", "unalive"), common misspellings,
+# and phrases older adults often use ("I'm a burden", "tired of living").
+crisis = ["suicid", "suicd", "sucid","kill myself", "kms", "unalive", "end my life", "end it all",
+          "want to die", "wanna die", "better off dead", "better off without me", "self harm", "selfharm",
+          "self-harm", "hurt myself", "cut myself", "no reason to live", "no point in living", "no point living",
+          "don't want to be here", "dont want to be here", "don't want to live", "dont want to live",
+          "can't go on", "cant go on", "tired of living", "don't want to wake up", "dont want to wake up",
+          "i'm a burden", "im a burden", "burden to everyone", "burden on everyone", "want to disappear"]
 yes = ["yes", "y", "ya", "yeah", "yea", "yep", "sure", "ok", "okay"]
 no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im not"]
 
@@ -20,15 +26,21 @@ no = ["no", "n", "nope", "nah", "not really", "no im not", "no i am not", "im no
 journal_dir = Path.home() / "TherapiBot Journal"
 
 # Wording follows 988 Lifeline, #BeThe1To and #chatsafe guidance (see README for sources)
+# Kept to plain words so it works for anyone from age 10 to 60+
 resources = ("  - Call or text 988 (US), or chat at chat.988lifeline.org\n"
-             "    It's free, confidential and open 24/7. A trained counselor will listen.\n"
+             "    It's free, private and open 24/7, for any age. A trained counselor will listen.\n"
              "    You don't need to be in crisis or know exactly what to say.\n"
+             "  - Veterans and service members: call 988 and press 1, or text 838255.\n"
              "  - Outside the US: findahelpline.com lists free helplines in your country.\n"
              "  - If you are in immediate danger or have hurt yourself, call 911 or your\n"
              "    local emergency number now.\n")
-trusted_person = ("You could also reach out to someone you trust, like a friend, family member,\n"
-                  "teacher, school counselor or doctor. If you're not sure what to say, you could\n"
-                  "start with: \"I've been having a really hard time. Can we talk?\"\n")
+trusted_person = ("You could also talk to someone you trust: a parent or other family member, a\n"
+                  "friend, a teacher or school counselor, a doctor, or a faith leader. If you're not\n"
+                  "sure what to say, you could start with: \"I've been having a really hard time.\n"
+                  "Can we talk?\"\n")
+safety_plan = ("It can also help to make a safety plan: a short list of warning signs, things that\n"
+               "help you cope, and people to call. The free Stanley-Brown Safety Plan walks you\n"
+               "through it: sprc.org/resources/stanley-brown-safety-plan\n")
 
 
 # main function where it will carry the code within all the code
@@ -42,7 +54,7 @@ def main():
 
 
 def is_crisis(text):
-    text = text.lower()
+    text = text.lower().replace("’", "'")  # curly apostrophes from copy/paste
     return any(phrase in text for phrase in crisis)
 
 
@@ -184,7 +196,7 @@ def ground():
 
 
 def talk():
-    print(f"\nTalking to someone can help, even if you're not in crisis.\n{resources}\n{trusted_person}")
+    print(f"\nTalking to someone can help, even if you're not in crisis.\n{resources}\n{trusted_person}\n{safety_plan}")
     if ask("Would you like me to open the 988 chat in your browser? (yes / no)\n").lower() in yes:
         webbrowser.open_new_tab("https://chat.988lifeline.org/")
 

@@ -12,10 +12,12 @@ The purpose of this "Chat Bot" is for the user to get help, as well as to expres
 > **TherapiBot is a simple program, not a person or a therapist.** If you are in crisis, call or text **988** in the US, or find a free helpline in your country at **[findahelpline.com](https://findahelpline.com)**. If you are in immediate danger, call 911 or your local emergency number.
 
 # What it does
-TherapiBot checks in on how you're feeling. If you're having a hard time, it asks directly whether you're having thoughts of suicide or self-harm, and connects you with real people if you are. Then it offers three things:
+TherapiBot is for anyone having a hard time, from kids around age 10 to adults 60 and older. It checks in on how you're feeling. If you're having a hard time, it asks directly whether you're having thoughts of suicide or self-harm, and connects you with real people if you are. Then it offers three things:
 - **Write about it:** a private space to put your thoughts into words, which you can save if you want.
 - **Calm my mind:** a short 5-4-3-2-1 grounding exercise.
-- **Find someone to talk to:** what 988 and other helplines are like, plus a simple way to start the conversation with someone you trust.
+- **Find someone to talk to:** what 988 and other helplines are like (including the Veterans Crisis Line), a simple way to start the conversation with someone you trust, and a link to a free safety plan.
+
+On the web version, the **Leave quickly** button jumps to a neutral page, for anyone worried that someone will see their screen.
 
 # Use it in your browser
 **[Open TherapiBot](https://lightinumbra.github.io/TherapiBot/)** on any phone or computer, with nothing to install. Everything stays on your device: nothing you type is sent or stored anywhere, and saved writing downloads as a text file.
@@ -43,4 +45,5 @@ The wording follows published guidance. If you change it, please keep to these p
 - **Focus on hope, actions and resources,** never on suicide itself. ([Action Alliance Framework for Successful Messaging](https://suicidepreventionmessaging.org/safety))
 - **Explain what reaching out is like,** so it feels less scary: 988 is free, confidential, and not only for emergencies. ([988 Lifeline](https://988lifeline.org/get-help/what-to-expect/))
 - **Offer coping strategies and people to contact,** the core of a safety plan. ([Stanley-Brown Safety Plan](https://sprc.org/resources/stanley-brown-safety-plan/), [grounding](https://www.nhsinform.scot/healthy-living/mental-wellbeing/breathing-and-relaxation-exercises/grounding-exercises/), [expressive writing](https://www.apa.org/news/podcasts/speaking-of-psychology/expressive-writing))
+- **Use plain words that work for every age,** and recognize how different ages talk about suicide: kids and teens might say "kms" or "unalive", while older adults might say "I'm a burden" or "tired of living". When you add a phrase, add a test for it in `test_TherapIOT.py`.
 - **Be honest that it's a program,** and point toward human care, not away from it. ([APA health advisory, 2025](https://www.apa.org/news/press/releases/2025/11/ai-wellness-apps-mental-health))
